@@ -33,77 +33,122 @@ import numpy as np
 import time
 import os
 
+################################################################################
+# Settings
+################################################################################
+# number of ping requests in single test case
+n = 10
+# exercised IP address
+IP = 'www.google.pl'
+# command responsible for sending ICMP request 
+ping_command = "ping -n " + str(n) + " " + IP
+# number of iterations
+max_iterations = 100000
+
+################################################################################
+# Global variables for results
+################################################################################
 list_checkpoints = []
 list_loss = []
 list_min = []
 list_max = []
 list_avg = []
 
-n = 10
-IP = 'www.google.com'
-ping_command = "ping -n " + str(n) + " " + IP
-base = (n-1)*6
-max_iterations = 100000
+################################################################################
+# Create result folder if required
+################################################################################
 results_folder = time.strftime('%a-%H-%M-%S')
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 
-def save_figures (directory):
-    global list_checkpoints, list_min, list_max, list_avg, list_loss
+################################################################################
+# Gets decimal number from text lines array from line at index
+#
+# @param text - array of text lines
+# @param index - index in text
+#
+# @output - decimal number
+################################################################################
+def get_number_from_text(text, index):
+    return (int(text[index].decode("utf-8").replace('(', '').replace(',', '').replace('ms', '').replace('%', '')))
+
+################################################################################
+# Gets ping results data
+#
+# @param data - output of ping command
+#
+# @output - loss, min/max/avg response time values
+################################################################################
+def get_ping_results (data):
+    j = 0
+    while (j < len(data)):
+        element = data[j].decode("utf-8")
+        if element == "Lost":
+            loss_value = get_number_from_text (data, j+3)
+        if element == "Minimum":
+            min_value = get_number_from_text (data, j+2)
+        if element == "Maximum":
+            max_value = get_number_from_text (data, j+2)
+        if element == "Average":
+            avg_value = get_number_from_text (data, j+2)
+        j += 1
+            
+    return (loss_value, min_value, max_value, avg_value)
+
+################################################################################
+# Saves figures
+#
+# @output - figures in output directory
+################################################################################
+def save_figures ():
+    global results_folder, list_checkpoints, list_min, list_max, list_avg, list_loss
+
     plt.figure(1)
     plt.plot(list_checkpoints, list_min, 'b-', ms=2)
     plt.plot(list_checkpoints, list_max, 'r-', ms=2)
     plt.plot(list_checkpoints, list_avg, 'g-', ms=2)
-    blue_patch = mpatches.Patch(color='blue', label='min [ms]')
-    red_patch = mpatches.Patch(color='red', label='max [ms]')
-    green_patch = mpatches.Patch(color='green', label='avg [ms]')
+    blue_patch = mpatches.Patch(color='blue', label='min')
+    red_patch = mpatches.Patch(color='red', label='max')
+    green_patch = mpatches.Patch(color='green', label='avg')
     plt.legend(handles=[red_patch, blue_patch, green_patch], loc='upper right', bbox_to_anchor=(0.8, 0.8))
     plt.xlabel('Iteration')
     plt.ylabel('Time [ms]')
-    plt.title('Max/Min/Avg response time')
+    plt.title('Ping maximum/minimum/average response time')
     plt.grid(True)
-    plt.savefig(directory + "/f_minmaxavf.png")
+    plt.savefig(results_folder + "/f_ping_minmaxavg.png")
 
     plt.figure(2)
     plt.plot(list_checkpoints, list_loss, 'b-', ms=2)
     plt.xlabel('Iteration')
     plt.ylabel('%')
-    plt.title('Loss rate')
+    plt.title('Ping reply loss rate [%]')
     plt.grid(True)
-    plt.savefig(directory + "/f_loss.png")
+    plt.savefig(results_folder + "/f_ping_loss.png")
 
-i = 1
+i = 0
 while (i < max_iterations):
 
+    # run command
     (output, error) = subprocess.Popen(ping_command,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
                                    shell=True).communicate()
     try:
+        # get results
         data = output.split()
-        j = 0
-        while (j < len(data)):
-            element = data[j].decode("utf-8")
-            if element == "Lost":
-                loss_value = data[j+3].decode("utf-8").replace('(', '').replace('%', '')
-            if element == "Minimum":
-                min_value = data[j+2].decode("utf-8").replace('(', '').replace(',', '').replace('ms', '')
-            if element == "Maximum":
-                max_value = data[j+2].decode("utf-8").replace('(', '').replace(',', '').replace('ms', '')
-            if element == "Average":
-                avg_value = data[j+2].decode("utf-8").replace('(', '').replace(',', '').replace('ms', '')
-            j += 1
+        (loss_value, min_value, max_value, avg_value) = get_ping_results (data)
 
+        # remember results
         list_checkpoints.append(i)
-        list_loss.append(int(loss_value))
-        list_min.append(int(min_value))
-        list_avg.append(int(avg_value))
-        list_max.append(int(max_value))
+        list_loss.append(loss_value)
+        list_min.append(min_value)
+        list_avg.append(avg_value)
+        list_max.append(max_value)
     except:
-        print (data)
+        print ("Exception found for: ", data)
         
     i += 1
-	
-    print (loss_value, min_value, max_value, avg_value)
-	
-    save_figures (results_folder)
+
+    print ("Loss rate[%], min/max/avg res time [ms]: ", loss_value, min_value, max_value, avg_value)
+    
+    save_figures ()
