@@ -28,8 +28,6 @@ import subprocess
 import string
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import matplotlib.mlab as mlab
-import numpy as np
 import time
 import os
 
@@ -39,7 +37,7 @@ import os
 # number of ping requests in single test case
 n = 10
 # exercised IP address
-IP = 'www.google.pl'
+IP = 'www.facebook.com'
 # command responsible for sending ICMP request 
 ping_command = "ping -n " + str(n) + " " + IP
 # number of iterations
@@ -57,7 +55,8 @@ list_avg = []
 ################################################################################
 # Create result folder if required
 ################################################################################
-results_folder = time.strftime('%a-%H-%M-%S')
+results_folder_prefix = "Results/"
+results_folder = results_folder_prefix + time.strftime('%a-%H-%M-%S')
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 
