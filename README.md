@@ -13,4 +13,4 @@ Results are peridocally displayed on the screen and written to figures in _Resul
 For instance, the following figures demonstrate network quality issues during first phase of monitoring:
 
 ![Sample loss rate](/Docs/f_loss.png "Sample loss rate")
-![Sample response time](/Docs/f_minmaxavf "Sample min/max/avg response time")
+![Sample response time](/Docs/f_minmaxavf.png "Sample min/max/avg response time")
