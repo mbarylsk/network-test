@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, Marcin Barylski
+# Copyright (c) 2017-2021, Marcin Barylski
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without modification, 
@@ -42,6 +42,8 @@ IP = 'www.facebook.com'
 ping_command = "ping -n " + str(n) + " " + IP
 # number of iterations
 max_iterations = 100000
+# number of times without internet at all
+no_internet = 0
 
 ################################################################################
 # Global variables for results
@@ -51,6 +53,7 @@ list_loss = []
 list_min = []
 list_max = []
 list_avg = []
+list_no_inet = []
 
 ################################################################################
 # Create result folder if required
@@ -79,6 +82,11 @@ def get_number_from_text(text, index):
 # @output - loss, min/max/avg response time values
 ################################################################################
 def get_ping_results (data):
+
+    loss_value = 100
+    min_value = 0
+    max_value = 0
+    avg_value = 0
     j = 0
     while (j < len(data)):
         element = data[j].decode("utf-8")
@@ -103,9 +111,9 @@ def save_figures ():
     global results_folder, list_checkpoints, list_min, list_max, list_avg, list_loss
 
     plt.figure(1)
-    plt.plot(list_checkpoints, list_min, 'b-', ms=2)
-    plt.plot(list_checkpoints, list_max, 'r-', ms=2)
-    plt.plot(list_checkpoints, list_avg, 'g-', ms=2)
+    plt.plot(list_checkpoints, list_min, 'b-', ms=1)
+    plt.plot(list_checkpoints, list_max, 'r-', ms=1)
+    plt.plot(list_checkpoints, list_avg, 'g-', ms=1)
     blue_patch = mpatches.Patch(color='blue', label='min')
     red_patch = mpatches.Patch(color='red', label='max')
     green_patch = mpatches.Patch(color='green', label='avg')
@@ -117,12 +125,20 @@ def save_figures ():
     plt.savefig(results_folder + "/f_ping_minmaxavg.png")
 
     plt.figure(2)
-    plt.plot(list_checkpoints, list_loss, 'b-', ms=2)
+    plt.plot(list_checkpoints, list_loss, 'b-', ms=1)
     plt.xlabel('Iteration')
     plt.ylabel('%')
     plt.title('Ping reply loss rate [%]')
     plt.grid(True)
     plt.savefig(results_folder + "/f_ping_loss.png")
+
+    plt.figure(3)
+    plt.plot(list_checkpoints, list_no_inet, 'b-', ms=1)
+    plt.xlabel('Iteration')
+    plt.ylabel('%')
+    plt.title('No internet at all')
+    plt.grid(True)
+    plt.savefig(results_folder + "/f_ping_no_inet.png")
 
 i = 0
 while (i < max_iterations):
@@ -143,8 +159,17 @@ while (i < max_iterations):
         list_min.append(min_value)
         list_avg.append(avg_value)
         list_max.append(max_value)
+
+        if loss_value == 100:
+            no_internet += 1
+        else:
+            no_internet = 0
+
     except:
         print ("Exception found for: ", data)
+        no_internet += 1
+
+    list_no_inet.append(no_internet)
         
     i += 1
 
